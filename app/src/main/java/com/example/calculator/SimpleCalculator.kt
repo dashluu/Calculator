@@ -5,9 +5,9 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import com.example.calculator.databinding.FragmentSimpleCalculatorBinding
-import java.util.*
 
 /**
  * A simple [Fragment] subclass.
@@ -25,7 +25,8 @@ class SimpleCalculator : Fragment() {
     ): View? {
         binding =
             DataBindingUtil.inflate(inflater, R.layout.fragment_simple_calculator, container, false)
-        inputStack = ArrayDeque<String>()
+        inputStack = ArrayDeque()
+        tokenStack = ArrayDeque()
 
         binding.apply {
             zeroBtn.setOnClickListener { mapBtnInput("0") }
@@ -50,6 +51,11 @@ class SimpleCalculator : Fragment() {
             sqrtBtn.setOnClickListener { mapBtnInput("√(") }
             clearEntryBtn.setOnClickListener { clearEntry() }
             clearAllBtn.setOnClickListener { clearAll() }
+            equalBtn.setOnClickListener {
+                pushTokenStack()
+                val result = MathEngine.evalExpr(tokenStack)
+                println("Result: $result")
+            }
         }
 
         return binding.root
@@ -63,7 +69,7 @@ class SimpleCalculator : Fragment() {
     private fun clearEntry() {
         var input = binding.expressionInput.text.toString()
         if (input.isEmpty()) return
-        val lastNumChars = inputStack.last().length
+        val lastNumChars = inputStack.removeLast().length
         input = input.substring(0, input.length - lastNumChars)
         binding.expressionInput.text = input
     }
@@ -76,23 +82,24 @@ class SimpleCalculator : Fragment() {
     private fun pushTokenStack() {
         var token = ""
         var currMathObj: MathObj
+        tokenStack.clear()
 
         for (str in inputStack) {
             if (str[0].isDigit())
                 token += str
             else {
                 if (token.isNotEmpty()) {
-                    currMathObj = MathObj(token)
+                    currMathObj = MathObj(token, MathObj.Type.NUMBER.flag, 0)
                     tokenStack.addLast(currMathObj)
                 }
-                currMathObj = MathObj(str)
+                currMathObj = MathEngine.getOperator(str)
                 tokenStack.addLast(currMathObj)
                 token = ""
             }
         }
 
         if (token.isNotEmpty()) {
-            currMathObj = MathObj(token)
+            currMathObj = MathObj(token, MathObj.Type.NUMBER.flag, 0)
             tokenStack.addLast(currMathObj)
         }
     }

@@ -4,7 +4,18 @@ import kotlin.collections.ArrayDeque
 
 class MathEngine {
     companion object Expr {
-        private val precedences = mapOf<String, Int>()
+        private val operatorSet = mapOf(
+            "(" to MathObj("(", MathObj.Type.OPEN_PAREN.flag, 1),
+            ")" to MathObj(")", MathObj.Type.CLOSE_PAREN.flag, 1),
+            "+" to MathObj("+", MathObj.Type.BIN_OP.flag, 3),
+            "-" to MathObj("-", MathObj.Type.BIN_OP.flag, 3),
+            "×" to MathObj("×", MathObj.Type.BIN_OP.flag, 2),
+            "÷" to MathObj("÷", MathObj.Type.BIN_OP.flag, 2)
+        )
+
+        fun getOperator(str: String): MathObj {
+            return operatorSet.getValue(str)
+        }
 
         private fun postFix(inputQueue: ArrayDeque<MathObj>, outputQueue: ArrayDeque<MathObj>) {
             // Initialize stack and queue
@@ -20,12 +31,11 @@ class MathEngine {
                     until it is empty or an open parenthesis is encountered and then push the
                     operator onto the stack.
                      */
-                    while (operatorStack.isNotEmpty() && !operatorStack.first().isOpenParen()) {
-                        top = operatorStack.first()
-                        if (cmpOperator(mathObj, top) <= 0) {
-                            operatorStack.removeLast()
-                            outputQueue.addLast(top)
-                        }
+                    while (operatorStack.isNotEmpty()
+                        && !operatorStack.last().isOpenParen()
+                        && mathObj.cmp(operatorStack.last()) >= 0
+                    ) {
+                        outputQueue.addLast(operatorStack.removeLast())
                     }
                     operatorStack.addLast(mathObj)
                 } else if (mathObj.isOpenParen()) {
@@ -38,12 +48,12 @@ class MathEngine {
                      */
                     openParenFlag = false
                     while (operatorStack.isNotEmpty() && !openParenFlag) {
-                        top = operatorStack.first()
+                        top = operatorStack.last()
                         if (top.isOpenParen())
                             openParenFlag = true
-                        operatorStack.removeLast()
                         if (top.isOperator())
                             outputQueue.addLast(top)
+                        operatorStack.removeLast()
                     }
                     if (!openParenFlag) {
                         // TODO: throw an exception if an open parenthesis is missing
@@ -55,19 +65,8 @@ class MathEngine {
             }
 
             // Enqueue strings that are popped from the stack
-            while (operatorStack.isNotEmpty()) {
-                top = operatorStack.first()
-                operatorStack.removeLast()
-                outputQueue.addLast(top)
-            }
-        }
-
-        private fun cmpOperator(mathObj1: MathObj, mathObj2: MathObj): Int {
-            val precedence1 = precedences.getValue(mathObj1.getStr())
-            val precedence2 = precedences.getValue(mathObj2.getStr())
-            if (precedence1 < precedence2) return -1
-            else if (precedence1 == precedence2) return 0
-            return 1
+            while (operatorStack.isNotEmpty())
+                outputQueue.addLast(operatorStack.removeLast())
         }
 
         fun evalExpr(inputQueue: ArrayDeque<MathObj>): Double {
@@ -116,7 +115,7 @@ class MathEngine {
                 "÷" -> operand1 / operator2
                 else -> 0.0
             }
-            return MathObj(result.toString())
+            return MathObj(result.toString(), MathObj.Type.NUMBER.flag, 0)
         }
     }
 }
