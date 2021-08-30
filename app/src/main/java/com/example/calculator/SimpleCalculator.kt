@@ -5,7 +5,6 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import com.example.calculator.databinding.FragmentSimpleCalculatorBinding
 
@@ -15,9 +14,17 @@ import com.example.calculator.databinding.FragmentSimpleCalculatorBinding
  * create an instance of this fragment.
  */
 class SimpleCalculator : Fragment() {
+    // TODO: create inputSeq as a list.
+    // TODO: consider creating EditMode and ErrorMode as subclasses of Mode.
+    // TODO: consider saving the current state before switching.
+
+    private enum class State { EDIT, ERROR }
+
     private lateinit var binding: FragmentSimpleCalculatorBinding
-    private lateinit var inputStack: ArrayDeque<String>
-    private lateinit var tokenStack: ArrayDeque<MathObj>
+    private val inputSeq = ArrayDeque<String>()
+    private val mathEngine = MathEngine()
+    private var state = State.EDIT
+    private var recentResult = ""
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -25,8 +32,6 @@ class SimpleCalculator : Fragment() {
     ): View? {
         binding =
             DataBindingUtil.inflate(inflater, R.layout.fragment_simple_calculator, container, false)
-        inputStack = ArrayDeque()
-        tokenStack = ArrayDeque()
 
         binding.apply {
             zeroBtn.setOnClickListener { mapBtnInput("0") }
@@ -51,56 +56,42 @@ class SimpleCalculator : Fragment() {
             sqrtBtn.setOnClickListener { mapBtnInput("√(") }
             clearEntryBtn.setOnClickListener { clearEntry() }
             clearAllBtn.setOnClickListener { clearAll() }
-            equalBtn.setOnClickListener {
-                pushTokenStack()
-                val result = MathEngine.evalExpr(tokenStack)
-                println("Result: $result")
-            }
+            equalBtn.setOnClickListener { showResult() }
         }
 
         return binding.root
     }
 
     private fun mapBtnInput(input: String) {
-        inputStack.addLast(input)
-        binding.expressionInput.text = binding.expressionInput.text.toString() + input
+        inputSeq.addLast(input)
+        binding.exprInput.text = binding.exprInput.text.toString() + input
     }
 
     private fun clearEntry() {
-        var input = binding.expressionInput.text.toString()
-        if (input.isEmpty()) return
-        val lastNumChars = inputStack.removeLast().length
-        input = input.substring(0, input.length - lastNumChars)
-        binding.expressionInput.text = input
+        val input = binding.exprInput.text.toString()
+        val lastNumChars = inputSeq.removeLast().length
+        binding.exprInput.text = input.substring(0, input.length - lastNumChars)
     }
 
     private fun clearAll() {
-        inputStack.clear()
-        binding.expressionInput.text = ""
+        if (state == State.EDIT) {
+            inputSeq.clear()
+        } else {
+            state = State.EDIT
+            binding.exprInput.text = recentResult
+        }
     }
 
-    private fun pushTokenStack() {
-        var token = ""
-        var currMathObj: MathObj
-        tokenStack.clear()
-
-        for (str in inputStack) {
-            if (str[0].isDigit())
-                token += str
-            else {
-                if (token.isNotEmpty()) {
-                    currMathObj = MathObj(token, MathObj.Type.NUMBER.flag, 0)
-                    tokenStack.addLast(currMathObj)
-                }
-                currMathObj = MathEngine.getOperator(str)
-                tokenStack.addLast(currMathObj)
-                token = ""
-            }
-        }
-
-        if (token.isNotEmpty()) {
-            currMathObj = MathObj(token, MathObj.Type.NUMBER.flag, 0)
-            tokenStack.addLast(currMathObj)
+    private fun showResult() {
+        try {
+            recentResult = mathEngine.eval(inputSeq)
+            inputSeq.clear()
+            for (c in recentResult)
+                inputSeq.addLast(c.toString())
+            binding.exprInput.text = recentResult
+        } catch (exception: SyntaxError) {
+            binding.exprInput.text = exception.message
+            state = State.ERROR
         }
     }
 }
