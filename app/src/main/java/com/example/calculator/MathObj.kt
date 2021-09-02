@@ -1,8 +1,11 @@
 package com.example.calculator
 
+import java.math.BigDecimal
+
 class MathObj(private val str: String, private var type: Int, private val preced: Int) {
 
-    private var execFun: ((Double, Double) -> Double) = { _, _ -> 0.0 }
+    private var execFun: ((BigDecimal, BigDecimal) -> BigDecimal) = { _, _ -> defaultResult }
+    private val defaultResult = BigDecimal("0")
 
     enum class Type(val flag: Int, val pos: Int) {
         NUMBER(0b00001, 0),
@@ -14,12 +17,15 @@ class MathObj(private val str: String, private var type: Int, private val preced
 
     constructor(
         str: String, type: Int,
-        preced: Int, execFun: (Double, Double) -> Double
+        preced: Int, execFun: (BigDecimal, BigDecimal) -> BigDecimal
     ) : this(str, type, preced) {
         this.execFun = execFun
     }
 
-    fun exec(operand1: Double = 0.0, operand2: Double = 0.0): Double {
+    fun exec(
+        operand1: BigDecimal = defaultResult,
+        operand2: BigDecimal = defaultResult
+    ): BigDecimal {
         return execFun(operand1, operand2)
     }
 

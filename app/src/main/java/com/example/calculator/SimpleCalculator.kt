@@ -6,6 +6,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import com.example.calculator.databinding.FragmentSimpleCalculatorBinding
 
 /**
@@ -14,17 +16,9 @@ import com.example.calculator.databinding.FragmentSimpleCalculatorBinding
  * create an instance of this fragment.
  */
 class SimpleCalculator : Fragment() {
-    // TODO: create inputSeq as a list.
-    // TODO: consider creating EditMode and ErrorMode as subclasses of Mode.
-    // TODO: consider saving the current state before switching.
-
-    private enum class State { EDIT, ERROR }
 
     private lateinit var binding: FragmentSimpleCalculatorBinding
-    private val inputSeq = ArrayDeque<String>()
-    private val mathEngine = MathEngine()
-    private var state = State.EDIT
-    private var recentResult = ""
+    private lateinit var calcViewModel: SimpleCalcViewModel
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -32,6 +26,11 @@ class SimpleCalculator : Fragment() {
     ): View? {
         binding =
             DataBindingUtil.inflate(inflater, R.layout.fragment_simple_calculator, container, false)
+
+        calcViewModel = ViewModelProvider(this).get(SimpleCalcViewModel::class.java)
+        calcViewModel.recent.observe(viewLifecycleOwner, { newRecent ->
+            binding.exprInput.text = newRecent
+        })
 
         binding.apply {
             zeroBtn.setOnClickListener { mapBtnInput("0") }
@@ -63,35 +62,24 @@ class SimpleCalculator : Fragment() {
     }
 
     private fun mapBtnInput(input: String) {
-        inputSeq.addLast(input)
-        binding.exprInput.text = binding.exprInput.text.toString() + input
+        calcViewModel.insertEntry(input)
     }
 
     private fun clearEntry() {
-        val input = binding.exprInput.text.toString()
-        val lastNumChars = inputSeq.removeLast().length
-        binding.exprInput.text = input.substring(0, input.length - lastNumChars)
+        calcViewModel.removeEntry()
     }
 
     private fun clearAll() {
-        if (state == State.EDIT) {
-            inputSeq.clear()
-        } else {
-            state = State.EDIT
-            binding.exprInput.text = recentResult
-        }
+        calcViewModel.clearAll()
+        binding.exprInput.text = calcViewModel.recent.value
     }
 
     private fun showResult() {
         try {
-            recentResult = mathEngine.eval(inputSeq)
-            inputSeq.clear()
-            for (c in recentResult)
-                inputSeq.addLast(c.toString())
-            binding.exprInput.text = recentResult
-        } catch (exception: SyntaxError) {
-            binding.exprInput.text = exception.message
-            state = State.ERROR
+            calcViewModel.getResult()
+        } catch (error: SyntaxError) {
+            binding.exprInput.text = error.message
+            calcViewModel.state.value = SimpleCalcViewModel.State.ERROR
         }
     }
 }
