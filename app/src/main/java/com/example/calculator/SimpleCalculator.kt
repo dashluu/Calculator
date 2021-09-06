@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.example.calculator.databinding.FragmentSimpleCalculatorBinding
 
@@ -28,9 +27,8 @@ class SimpleCalculator : Fragment() {
             DataBindingUtil.inflate(inflater, R.layout.fragment_simple_calculator, container, false)
 
         calcViewModel = ViewModelProvider(this).get(SimpleCalcViewModel::class.java)
-        calcViewModel.recent.observe(viewLifecycleOwner, { newRecent ->
-            binding.exprInput.text = newRecent
-        })
+        binding.calcViewModel = calcViewModel
+        binding.lifecycleOwner = viewLifecycleOwner
 
         binding.apply {
             zeroBtn.setOnClickListener { mapBtnInput("0") }
@@ -46,6 +44,7 @@ class SimpleCalculator : Fragment() {
             decimalPointBtn.setOnClickListener { mapBtnInput(".") }
             openParenthesisBtn.setOnClickListener { mapBtnInput("(") }
             closeParenthesisBtn.setOnClickListener { mapBtnInput(")") }
+            unaryMinusBtn.setOnClickListener { mapBtnInput("-(") }
             factorialBtn.setOnClickListener { mapBtnInput("!") }
             addBtn.setOnClickListener { mapBtnInput("+") }
             subtractBtn.setOnClickListener { mapBtnInput("-") }
@@ -71,15 +70,13 @@ class SimpleCalculator : Fragment() {
 
     private fun clearAll() {
         calcViewModel.clearAll()
-        binding.exprInput.text = calcViewModel.recent.value
     }
 
     private fun showResult() {
         try {
             calcViewModel.getResult()
         } catch (error: SyntaxError) {
-            binding.exprInput.text = error.message
-            calcViewModel.state.value = SimpleCalcViewModel.State.ERROR
+            calcViewModel.setErrMsg(error.message!!)
         }
     }
 }

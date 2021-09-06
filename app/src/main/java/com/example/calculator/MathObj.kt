@@ -2,10 +2,12 @@ package com.example.calculator
 
 import java.math.BigDecimal
 
-class MathObj(private val str: String, private var type: Int, private val preced: Int) {
+class MathObj(private val _str: String, private var type: Int, private val preced: Int) {
 
+    val str: String
+        get() = _str
     private var execFun: ((BigDecimal, BigDecimal) -> BigDecimal) = { _, _ -> defaultResult }
-    private val defaultResult = BigDecimal("0")
+    private val defaultResult = BigDecimal.ZERO
 
     enum class Type(val flag: Int, val pos: Int) {
         NUMBER(0b00001, 0),
@@ -27,10 +29,6 @@ class MathObj(private val str: String, private var type: Int, private val preced
         operand2: BigDecimal = defaultResult
     ): BigDecimal {
         return execFun(operand1, operand2)
-    }
-
-    fun getStr(): String {
-        return str
     }
 
     fun isOperator(): Boolean {

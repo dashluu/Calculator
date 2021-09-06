@@ -2,6 +2,12 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
+    
+    <data>
+        <variable
+            name="calcViewModel"
+            type="com.example.calculator.SimpleCalcViewModel" />
+    </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -14,6 +20,7 @@
             android:layout_height="0dp"
             android:background="@color/control_background_day"
             android:padding="@dimen/simple_calc_text_padding"
+            android:text="@{calcViewModel.content}"
             android:textAlignment="textEnd"
             android:textColor="@color/black"
             android:textSize="30sp"
@@ -28,7 +35,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/open_parenthesis"
-            app:layout_constraintBottom_toTopOf="@+id/percentage_btn"
+            app:layout_constraintBottom_toTopOf="@+id/unary_minus_btn"
             app:layout_constraintEnd_toStartOf="@+id/close_parenthesis_btn"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintHorizontal_chainStyle="packed"
@@ -37,11 +44,11 @@
             app:layout_constraintVertical_chainStyle="packed" />
 
         <Button
-            android:id="@+id/percentage_btn"
+            android:id="@+id/unary_minus_btn"
             style="@style/SimpleCalcBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/percentage"
+            android:text="@string/unary_minus"
             app:layout_constraintBottom_toTopOf="@+id/seven_btn"
             app:layout_constraintEnd_toStartOf="@+id/power_btn"
             app:layout_constraintHorizontal_bias="0.5"
@@ -60,7 +67,7 @@
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintHorizontal_chainStyle="packed"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/percentage_btn" />
+            app:layout_constraintTop_toBottomOf="@+id/unary_minus_btn" />
 
         <Button
             android:id="@+id/four_btn"
@@ -241,10 +248,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/power"
-            app:layout_constraintBaseline_toBaselineOf="@+id/percentage_btn"
+            app:layout_constraintBaseline_toBaselineOf="@+id/unary_minus_btn"
             app:layout_constraintEnd_toStartOf="@+id/sqrt_btn"
             app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintStart_toEndOf="@+id/percentage_btn" />
+            app:layout_constraintStart_toEndOf="@+id/unary_minus_btn" />
 
         <Button
             android:id="@+id/sqrt_btn"
@@ -252,7 +259,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/sqrt"
-            app:layout_constraintBaseline_toBaselineOf="@+id/percentage_btn"
+            app:layout_constraintBaseline_toBaselineOf="@+id/unary_minus_btn"
             app:layout_constraintEnd_toStartOf="@+id/factorial_btn"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toEndOf="@+id/power_btn" />
@@ -263,7 +270,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/factorial"
-            app:layout_constraintBaseline_toBaselineOf="@+id/percentage_btn"
+            app:layout_constraintBaseline_toBaselineOf="@+id/unary_minus_btn"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toEndOf="@+id/sqrt_btn" />

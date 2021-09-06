@@ -26,4 +26,5 @@
     <string name="close_parenthesis">)</string>
     <string name="multiply">×</string>
     <string name="divide">÷</string>
+    <string name="unary_minus">(-)</string>
 </resources>

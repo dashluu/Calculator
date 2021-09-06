@@ -7,53 +7,39 @@ import androidx.lifecycle.ViewModel
 class SimpleCalcViewModel : ViewModel() {
     enum class State { EDIT, ERROR }
 
-    private val inputSeq = mutableListOf<String>()
+    private val inputManager = InputManager()
     private val mathEngine = MathEngine()
-    var state = MutableLiveData<State>()
-    private var _recent = MutableLiveData<String>()
-    val recent: LiveData<String>
-        get() = _recent
-    private var cursorPos = 0
-
-    init {
-        state.value = State.EDIT
-        _recent.value = ""
-    }
-
-    private fun updateRecent() {
-        var tempStr = ""
-        for (str in inputSeq) tempStr += str
-        _recent.value = tempStr
-    }
+    private var state = State.EDIT
+    private val _content = MutableLiveData<String>()
+    val content: LiveData<String>
+        get() = _content
 
     fun insertEntry(input: String) {
-        inputSeq.add(cursorPos, input)
-        ++cursorPos
-        updateRecent()
+        inputManager.insertEntry(input)
+        _content.value = inputManager.composedStr
     }
 
     fun removeEntry() {
-        if (cursorPos > 0) --cursorPos
-        inputSeq.removeAt(cursorPos)
-        updateRecent()
+        inputManager.removeEntry()
+        _content.value = inputManager.composedStr
     }
 
     fun clearAll() {
-        if (state.value == State.EDIT) {
-            inputSeq.clear()
-            cursorPos = 0
-            updateRecent()
-        } else state.value = State.EDIT
+        if (state == State.EDIT)
+            inputManager.removeAll()
+        else state = State.EDIT
+        _content.value = inputManager.composedStr
     }
 
     fun getResult() {
-        val result = mathEngine.eval(inputSeq)
-        inputSeq.clear()
-        cursorPos = 0
-        for (str in result) {
-            inputSeq.add(str.toString())
-            ++cursorPos
-        }
-        updateRecent()
+        val result = mathEngine.eval(inputManager.tokens)
+        inputManager.removeAll()
+        inputManager.insertEntry(result)
+        _content.value = inputManager.composedStr
+    }
+
+    fun setErrMsg(errMsg: String) {
+        state = State.ERROR
+        _content.value = errMsg
     }
 }

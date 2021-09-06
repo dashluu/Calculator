@@ -1,0 +1,142 @@
+package com.example.calculator
+
+import java.math.BigDecimal
+
+class MathObj(private val str: String, private var type: Int, private val preced: Int) {
+
+    private var execFun: ((BigDecimal, BigDecimal) -> BigDecimal) = { _, _ -> defaultResult }
+    private val defaultResult = BigDecimal("0")
+
+    enum class Type(val flag: Int, val pos: Int) {
+        NUMBER(0b00001, 0),
+        BIN_OP(0b00010, 1),
+        UN_OP(0b00100, 2),
+        OPEN_PAREN(0b01000, 3),
+        CLOSE_PAREN(0b10000, 4)
+    }
+
+    constructor(
+        str: String, type: Int,
+        preced: Int, execFun: (BigDecimal, BigDecimal) -> BigDecimal
+    ) : this(str, type, preced) {
+        this.execFun = execFun
+    }
+
+    fun exec(
+        operand1: BigDecimal = defaultResult,
+        operand2: BigDecimal = defaultResult
+    ): BigDecimal {
+        return execFun(operand1, operand2)
+    }
+
+    fun getStr(): String {
+        return str
+    }
+
+    fun isOperator(): Boolean {
+        return (((type shr Type.BIN_OP.pos) and 1) > 0) ||
+                (((type shr Type.UN_OP.pos) and 1) > 0)
+    }
+
+    fun isBinOp(): Boolean {
+        return ((type shr Type.BIN_OP.pos) and 1) > 0
+    }
+
+    fun isUnOp(): Boolean {
+        return ((type shr Type.UN_OP.pos) and 1) > 0
+    }
+
+    fun isOpenParen(): Boolean {
+        return ((type shr Type.OPEN_PAREN.pos) and 1) > 0
+    }
+
+    fun isCloseParen(): Boolean {
+        return ((type shr Type.CLOSE_PAREN.pos) and 1) > 0
+    }
+
+    fun isOperand(): Boolean {
+        return ((type shr Type.NUMBER.pos) and 1) > 0
+    }
+
+    operator fun compareTo(obj: MathObj): Int {
+        if (preced < obj.preced) return -1
+        else if (preced == obj.preced) return 0
+        return 1
+    }
+}
+
+
+
+
+
+
+{ operand1: BigDecimal, operand2: BigDecimal ->
+            operand1 + operand2
+        }
+
+
+
+
+fun plus(operand1: BigDecimal, operand2: BigDecimal): BigDecimal {
+        return operand1 + operand2
+    }
+
+    fun minus(operand1: BigDecimal, operand2: BigDecimal): BigDecimal {
+        return operand1 - operand2
+    }
+
+    fun mult(operand1: BigDecimal, operand2: BigDecimal): BigDecimal {
+        return operand1 * operand2
+    }
+
+
+
+
+
+
+
+
+
+
+
+"(" to MathObj("(", MathObj.Type.OPEN_PAREN.flag, 1),
+        ")" to MathObj(")", MathObj.Type.CLOSE_PAREN.flag, 1),
+        "√(" to MathObj("√(", MathObj.Type.UN_OP.flag or MathObj.Type.OPEN_PAREN.flag, 1),
+        "!" to MathObj("!", MathObj.Type.UN_OP.flag, 2),
+        "^" to MathObj("^", MathObj.Type.BIN_OP.flag, 3),
+        "×" to MathObj(
+            "×",
+            MathObj.Type.BIN_OP.flag,
+            4
+        ) { operand1: BigDecimal, operand2: BigDecimal ->
+            operand1 * operand2
+        },
+        "÷" to MathObj(
+            "÷",
+            MathObj.Type.BIN_OP.flag,
+            4
+        ) { operand1: BigDecimal, operand2: BigDecimal ->
+            operand1 / operand2
+        },
+        "+" to MathObj(
+            "+",
+            MathObj.Type.BIN_OP.flag,
+            5
+        ) { operand1: BigDecimal, operand2: BigDecimal ->
+            operand1 + operand2
+        },
+        "-" to MathObj(
+            "-",
+            MathObj.Type.BIN_OP.flag,
+            5
+        ) { operand1: BigDecimal, operand2: BigDecimal ->
+            operand1 - operand2
+        }
+
+
+
+
+companion object {
+        val strComparator =
+            Comparator { obj1: MathObj, obj2: MathObj -> obj1._str.compareTo(obj2._str) }
+    }

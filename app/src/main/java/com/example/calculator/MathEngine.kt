@@ -11,49 +11,9 @@ class MathEngine {
     private val evalStack = ArrayDeque<MathObj>()
     private val coreMath = CoreMath()
 
-    private val operatorSet = mapOf(
-        "(" to MathObj("(", MathObj.Type.OPEN_PAREN.flag, 1),
-        ")" to MathObj(")", MathObj.Type.CLOSE_PAREN.flag, 1),
-        "√(" to MathObj("√(", MathObj.Type.UN_OP.flag or MathObj.Type.OPEN_PAREN.flag, 1),
-        "!" to MathObj("!", MathObj.Type.UN_OP.flag, 2),
-        "^" to MathObj("^", MathObj.Type.BIN_OP.flag, 3),
-        "×" to MathObj(
-            "×",
-            MathObj.Type.BIN_OP.flag,
-            4
-        ) { operand1: BigDecimal, operand2: BigDecimal ->
-            operand1 * operand2
-        },
-        "÷" to MathObj(
-            "÷",
-            MathObj.Type.BIN_OP.flag,
-            4
-        ) { operand1: BigDecimal, operand2: BigDecimal ->
-            operand1 / operand2
-        },
-        "+" to MathObj(
-            "+",
-            MathObj.Type.BIN_OP.flag,
-            5
-        ) { operand1: BigDecimal, operand2: BigDecimal ->
-            operand1 + operand2
-        },
-        "-" to MathObj(
-            "-",
-            MathObj.Type.BIN_OP.flag,
-            5
-        ) { operand1: BigDecimal, operand2: BigDecimal ->
-            operand1 - operand2
-        }
-    )
-
-    private fun getOperator(str: String): MathObj {
-        return operatorSet.getValue(str)
-    }
-
-    fun eval(inputSeq: MutableList<String>): String {
+    fun eval(tokens: List<String>): String {
         clearResource()
-        processInput(inputSeq)
+        processInput(tokens)
         transformToPostfix()
         return evalPostfix()
     }
@@ -70,26 +30,26 @@ class MathEngine {
         return input.isDigit() || input == '.'
     }
 
-    private fun processInput(inputSeq: MutableList<String>) {
-        var token = ""
+    private fun processInput(tokens: List<String>) {
+        var numToken = ""
         var currMathObj: MathObj
 
-        for (str in inputSeq) {
+        for (str in tokens) {
             if (isNumComp(str[0]))
-                token += str
+                numToken += str
             else {
-                if (token.isNotEmpty()) {
-                    currMathObj = MathObj(token, MathObj.Type.NUMBER.flag, 0)
+                if (numToken.isNotEmpty()) {
+                    currMathObj = MathObj(numToken, MathObj.Type.NUMBER.flag, 0)
                     tokenQueue.addLast(currMathObj)
                 }
-                currMathObj = getOperator(str)
+                currMathObj = coreMath.getOperator(str)!!
                 tokenQueue.addLast(currMathObj)
-                token = ""
+                numToken = ""
             }
         }
 
-        if (token.isNotEmpty()) {
-            currMathObj = MathObj(token, MathObj.Type.NUMBER.flag, 0)
+        if (numToken.isNotEmpty()) {
+            currMathObj = MathObj(numToken, MathObj.Type.NUMBER.flag, 0)
             tokenQueue.addLast(currMathObj)
         }
     }
@@ -164,12 +124,12 @@ class MathEngine {
                  */
                 // Check if the stack is empty and throw an exception if it is.
                 if (evalStack.isEmpty()) throw SyntaxError()
-                operand2 = evalStack.removeLast().getStr().toBigDecimalOrNull()
+                operand2 = evalStack.removeLast().str.toBigDecimalOrNull()
                 // Check if whatever is popped from the stack is numeric.
                 if (operand2 == null) throw SyntaxError()
                 // Check if the stack is empty and throw an exception if it is.
                 if (evalStack.isEmpty()) throw SyntaxError()
-                operand1 = evalStack.removeLast().getStr().toBigDecimalOrNull()
+                operand1 = evalStack.removeLast().str.toBigDecimalOrNull()
                 // Check if whatever is popped from the stack is numeric.
                 if (operand1 == null) throw SyntaxError()
                 // Format the operands before executing the operation.
@@ -186,7 +146,7 @@ class MathEngine {
                  */
                 // Check if the stack is empty and throw an exception if it is.
                 if (evalStack.isEmpty()) throw SyntaxError()
-                operand1 = evalStack.removeLast().getStr().toBigDecimalOrNull()
+                operand1 = evalStack.removeLast().str.toBigDecimalOrNull()
                 // Check if whatever is popped from the stack is numeric.
                 if (operand1 == null) throw SyntaxError()
                 // Format the operand before executing the operation.
@@ -196,7 +156,7 @@ class MathEngine {
                 resultObj = MathObj(result.toString(), MathObj.Type.NUMBER.flag, 0)
                 evalStack.addLast(resultObj)
             } else {
-                operand1 = top.getStr().toBigDecimalOrNull()
+                operand1 = top.str.toBigDecimalOrNull()
                 // Check if the math object is a proper number.
                 if (operand1 == null) throw SyntaxError()
                 evalStack.addLast(top)
@@ -204,6 +164,6 @@ class MathEngine {
         }
 
         if (evalStack.isEmpty()) return "0"
-        return coreMath.formatResult(evalStack.removeLast().getStr().toBigDecimal())
+        return coreMath.formatResult(evalStack.removeLast().str.toBigDecimal())
     }
 }
