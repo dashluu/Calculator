@@ -133,8 +133,8 @@ class MathEngine {
                 // Check if whatever is popped from the stack is numeric.
                 if (operand1 == null) throw SyntaxError()
                 // Format the operands before executing the operation.
-                operand1 = CoreMath.operandToNum(operand1)
-                operand2 = CoreMath.operandToNum(operand2)
+                operand1 = CoreMath.formatOperand(operand1)
+                operand2 = CoreMath.formatOperand(operand2)
                 // Execute the proper operation and save the result in the stack.
                 result = top.exec(operand1, operand2)
                 resultObj = MathObj(result.toString(), MathObj.Type.NUMBER.flag, 0)
@@ -150,7 +150,7 @@ class MathEngine {
                 // Check if whatever is popped from the stack is numeric.
                 if (operand1 == null) throw SyntaxError()
                 // Format the operand before executing the operation.
-                operand1 = CoreMath.operandToNum(operand1)
+                operand1 = CoreMath.formatOperand(operand1)
                 // Execute the proper operation and save the result in the stack.
                 result = top.exec(operand1, BigDecimal.ZERO)
                 resultObj = MathObj(result.toString(), MathObj.Type.NUMBER.flag, 0)

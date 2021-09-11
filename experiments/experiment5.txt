@@ -1,0 +1,40 @@
+fun sin(operand: BigDecimal): BigDecimal {
+        var power = M_ONE
+        var fact = M_ONE
+        var sum = M_ZERO
+        var altSign = M_NEG_ONE
+        val modeOperand: BigDecimal = if (radMode == RadMode.RAD)
+            degToRad(operand)
+        else operand
+        var i = 0
+
+        while (i < MAX_TAYLOR_TERMS && !testError(M_ONE, modeOperand, M_ZERO, i, fact)) {
+            if (i % 2 != 0) {
+                altSign = -altSign
+                sum += (altSign * power) / fact
+            }
+            power *= modeOperand
+            fact *= BigDecimal(i + 1)
+            ++i
+        }
+
+        return sum
+    }
+
+    private fun testError(
+        m: BigDecimal, x: BigDecimal, a: BigDecimal,
+        n: Int, fact: BigDecimal
+    ): Boolean {
+        val remainder = (m * (x - a).pow(n)) / fact
+        return operandToNum(remainder) == M_ZERO
+    }
+
+
+
+
+fun sin_isCorrect() {
+        assertEquals(
+            CoreMath.operandToNum(BigDecimal(0.121869344)),
+            CoreMath.operandToNum(coreMath.sin(BigDecimal(7)))
+        )
+    }

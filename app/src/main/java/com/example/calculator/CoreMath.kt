@@ -1,6 +1,8 @@
 package com.example.calculator
 
+import java.lang.ArithmeticException
 import java.math.BigDecimal
+import java.math.BigInteger
 import java.math.RoundingMode
 import java.text.DecimalFormat
 import kotlin.math.PI
@@ -30,28 +32,35 @@ class CoreMath {
     )
 
     companion object {
-        private const val NUM_FRAC_DIGITS = 9
+        private const val MIN_FRAC_DIGITS = 10
+        private const val MAX_FRAC_DIGITS = 20
         private val ROUNDING_MODE = RoundingMode.HALF_UP
         private const val MAX_TAYLOR_TERMS = 32
-        private val M_ZERO = operandToNum(BigDecimal.ZERO)
-        private val M_ONE = operandToNum(BigDecimal.ONE)
-        private val M_NEG_ONE = operandToNum(-BigDecimal.ONE)
+        private val M_ZERO = formatOperand(BigDecimal.ZERO)
+        private val M_ONE = formatOperand(BigDecimal.ONE)
+        private val M_NEG_ONE = formatOperand(-BigDecimal.ONE)
         private val M_PI: BigDecimal
-            get() = operandToNum(BigDecimal(PI))
+            get() = formatOperand(BigDecimal(PI))
         private val M_DEG: BigDecimal
-            get() = operandToNum(BigDecimal(180))
+            get() = formatOperand(BigDecimal(180))
 
-        private fun operandToStr(operand: BigDecimal): String {
+        fun formatOperand(operand: BigDecimal): BigDecimal {
             val decFormat = DecimalFormat()
-            decFormat.maximumFractionDigits = NUM_FRAC_DIGITS
-            decFormat.minimumFractionDigits = NUM_FRAC_DIGITS
+            decFormat.maximumFractionDigits = MAX_FRAC_DIGITS
+            decFormat.minimumFractionDigits = MAX_FRAC_DIGITS
             decFormat.roundingMode = ROUNDING_MODE
             decFormat.isGroupingUsed = false
-            return decFormat.format(operand)
+            return decFormat.format(operand).toBigDecimal()
         }
 
-        fun operandToNum(operand: BigDecimal): BigDecimal {
-            return operandToStr(operand).toBigDecimal()
+        private fun isInt(num: BigDecimal): Boolean {
+            val decimalVal = formatOperand(num)
+            val intVal = toInt(num)
+            return decimalVal == intVal
+        }
+
+        private fun toInt(num: BigDecimal): BigDecimal {
+            return formatOperand(num.toBigInteger().toBigDecimal())
         }
     }
 
@@ -79,7 +88,7 @@ class CoreMath {
 
     fun formatResult(result: BigDecimal): String {
         val decFormat = DecimalFormat()
-        decFormat.maximumFractionDigits = NUM_FRAC_DIGITS
+        decFormat.maximumFractionDigits = MIN_FRAC_DIGITS
         decFormat.minimumFractionDigits = 0
         decFormat.roundingMode = ROUNDING_MODE
         decFormat.isGroupingUsed = false
@@ -96,34 +105,14 @@ class CoreMath {
         return M_ZERO
     }
 
-    fun sin(operand: BigDecimal): BigDecimal {
-        var power = M_ONE
-        var fact = M_ONE
-        var sum = M_ZERO
-        var altSign = M_NEG_ONE
-        val modeOperand: BigDecimal = if (radMode == RadMode.RAD)
-            degToRad(operand)
-        else operand
-        var i = 0
+    private fun negOnePosPow(powVal: BigDecimal): BigDecimal {
+        if (isInt(powVal)) return powVal.pow(powVal.intValueExact())
+        val intPowVal = toInt(powVal)
+        val fracPowVal = powVal - intPowVal
+        val frac = Fraction.toFraction(fracPowVal, false)
+        val fracGCD = frac.simplifyAssign()
 
-        while (i < MAX_TAYLOR_TERMS && !testError(M_ONE, modeOperand, M_ZERO, i, fact)) {
-            if (i % 2 != 0) {
-                altSign = -altSign
-                sum += (altSign * power) / fact
-            }
-            power *= modeOperand
-            fact *= BigDecimal(i + 1)
-            ++i
-        }
-
-        return sum
-    }
-
-    private fun testError(
-        m: BigDecimal, x: BigDecimal, a: BigDecimal,
-        n: Int, fact: BigDecimal
-    ): Boolean {
-        val remainder = (m * (x - a).pow(n)) / fact
-        return operandToNum(remainder) == M_ZERO
+        if (fracGCD.rem(BigInteger("2")) == BigInteger.ZERO)
+            throw ArithmeticException()
     }
 }
