@@ -1,0 +1,70 @@
+if (isInt(powVal)) return powVal.pow(powVal.intValueExact())
+        val intPowVal = toInt(powVal)
+        val fracPowVal = powVal - intPowVal
+        val frac = Fraction.toFraction(fracPowVal, false)
+        val fracGCD = frac.simplifyAssign()
+
+        if (fracGCD.rem(BigInteger("2")) == BigInteger.ZERO)
+            throw ArithmeticException()
+
+
+
+
+private fun isInt(num: BigDecimal): Boolean {
+            val decimalVal = num.fracScale()
+            val intVal = toInt(num)
+            return decimalVal == intVal
+        }
+
+        private fun toInt(num: BigDecimal): BigDecimal {
+            return num.toBigInteger().toBigDecimal().fracScale()
+        }
+
+
+
+private fun negOnePosPow(powVal: BigDecimal): BigDecimal {
+
+    }
+
+
+
+
+private fun zeroPow(powVal: BigDecimal): BigDecimal {
+        if (powVal < M_ZERO) throw SyntaxError()
+        else if (powVal == M_ZERO) return M_ONE
+        return M_ZERO
+    }
+
+
+
+
+var i = 0
+        var xPow = M_ONE
+        var fact = M_ONE
+        var result = M_ZERO
+
+        while (i < MAX_TAYLOR_TERMS && !testPrecision(M_ONE, xVal, M_ZERO, i, fact)) {
+            result += xPow / fact
+            xPow *= xVal
+            fact *= BigDecimal(i + 1)
+            ++i
+        }
+
+        return result
+
+
+
+
+
+private fun testPrecision(
+        mVal: BigDecimal, xVal: BigDecimal, aVal: BigDecimal,
+        nVal: Int, fact: BigDecimal
+    ): Boolean {
+        val remainder = (mVal * (xVal - aVal).abs().pow(nVal + 1)) / fact
+        return remainder.fracScale() == M_ZERO
+    }
+
+
+
+
+if (!testPrecision(M_ONE, xVal, M_ZERO, i, fact))

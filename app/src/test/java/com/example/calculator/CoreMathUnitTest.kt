@@ -14,7 +14,34 @@ class CoreMathUnitTest {
     private val coreMath = CoreMath()
 
     @Test
-    fun sin_isCorrect() {
+    fun exp_isCorrect() {
+        assertEquals(
+            BigDecimal("0.1495686192").fracScale(),
+            coreMath.exp(BigDecimal("-1.9")).fracScale()
+        )
+    }
 
+    @Test
+    fun logECenterOne_isCorrect() {
+        assertEquals(
+            BigDecimal("-1.203972804").fracScale(),
+            coreMath.logECenterOne(BigDecimal("0.3")).fracScale()
+        )
+    }
+
+    @Test
+    fun logE_isCorrect() {
+        assertEquals(
+            BigDecimal("1.098612289").fracScale(),
+            coreMath.logE(BigDecimal("3")).fracScale()
+        )
+    }
+
+    @Test
+    fun posBasePow_isCorrect() {
+        assertEquals(
+            BigDecimal("3").fracScale(),
+            coreMath.posBasePow(BigDecimal("3"), BigDecimal("1")).fracScale()
+        )
     }
 }

@@ -1,11 +1,15 @@
 package com.example.calculator
 
-import java.lang.ArithmeticException
 import java.math.BigDecimal
-import java.math.BigInteger
 import java.math.RoundingMode
 import java.text.DecimalFormat
 import kotlin.math.PI
+import kotlin.math.E
+import kotlin.math.log
+
+fun BigDecimal.fracScale(): BigDecimal {
+    return setScale(CoreMath.MAX_FRAC_DIGITS, CoreMath.ROUNDING_MODE)
+}
 
 class CoreMath {
 
@@ -32,36 +36,17 @@ class CoreMath {
     )
 
     companion object {
-        private const val MIN_FRAC_DIGITS = 10
-        private const val MAX_FRAC_DIGITS = 20
-        private val ROUNDING_MODE = RoundingMode.HALF_UP
-        private const val MAX_TAYLOR_TERMS = 32
-        private val M_ZERO = formatOperand(BigDecimal.ZERO)
-        private val M_ONE = formatOperand(BigDecimal.ONE)
-        private val M_NEG_ONE = formatOperand(-BigDecimal.ONE)
-        private val M_PI: BigDecimal
-            get() = formatOperand(BigDecimal(PI))
-        private val M_DEG: BigDecimal
-            get() = formatOperand(BigDecimal(180))
-
-        fun formatOperand(operand: BigDecimal): BigDecimal {
-            val decFormat = DecimalFormat()
-            decFormat.maximumFractionDigits = MAX_FRAC_DIGITS
-            decFormat.minimumFractionDigits = MAX_FRAC_DIGITS
-            decFormat.roundingMode = ROUNDING_MODE
-            decFormat.isGroupingUsed = false
-            return decFormat.format(operand).toBigDecimal()
-        }
-
-        private fun isInt(num: BigDecimal): Boolean {
-            val decimalVal = formatOperand(num)
-            val intVal = toInt(num)
-            return decimalVal == intVal
-        }
-
-        private fun toInt(num: BigDecimal): BigDecimal {
-            return formatOperand(num.toBigInteger().toBigDecimal())
-        }
+        const val MIN_FRAC_DIGITS = 9
+        const val MAX_FRAC_DIGITS = 12
+        val ROUNDING_MODE = RoundingMode.HALF_UP
+        const val MAX_TAYLOR_TERMS = 50
+        val M_ZERO: BigDecimal = BigDecimal.ZERO.fracScale()
+        val M_ONE: BigDecimal = BigDecimal.ONE.fracScale()
+        val M_TEN: BigDecimal = BigDecimal.TEN.fracScale()
+        val M_PI = BigDecimal(PI).fracScale()
+        val M_DEG = BigDecimal(180).fracScale()
+        val M_E = BigDecimal(E).fracScale()
+        val M_LOG_E_TEN = BigDecimal(log(10.0, E)).fracScale()
     }
 
     init {
@@ -99,20 +84,67 @@ class CoreMath {
         return (deg * M_PI) / M_DEG
     }
 
-    private fun zeroPow(powVal: BigDecimal): BigDecimal {
-        if (powVal < M_ZERO) throw SyntaxError()
-        else if (powVal == M_ZERO) return M_ONE
-        return M_ZERO
+    private fun zeroPow(xVal: BigDecimal): BigDecimal {
+        if (xVal < M_ZERO) throw SyntaxError()
+        else if (xVal > M_ZERO) return M_ZERO
+        return M_ONE
     }
 
-    private fun negOnePosPow(powVal: BigDecimal): BigDecimal {
-        if (isInt(powVal)) return powVal.pow(powVal.intValueExact())
-        val intPowVal = toInt(powVal)
-        val fracPowVal = powVal - intPowVal
-        val frac = Fraction.toFraction(fracPowVal, false)
-        val fracGCD = frac.simplifyAssign()
+    private fun testPrecision(
+        mVal: BigDecimal, xVal: BigDecimal, aVal: BigDecimal,
+        nVal: Int, fact: BigDecimal
+    ): Boolean {
+        return ((mVal * (xVal - aVal).abs().pow(nVal)) / fact).fracScale() == M_ZERO
+    }
 
-        if (fracGCD.rem(BigInteger("2")) == BigInteger.ZERO)
-            throw ArithmeticException()
+    fun exp(xVal: BigDecimal): BigDecimal {
+        var i = 0
+        var xPow = M_ONE
+        var fact = M_ONE
+        var result = M_ZERO
+        val upper = M_E.pow(xVal.toInt() + 1)
+
+        while (!testPrecision(upper, xVal, M_ZERO, i, fact)) {
+            result += xPow / fact
+            xPow *= xVal
+            fact *= BigDecimal(i + 1)
+            ++i
+        }
+
+        return result
+    }
+
+    fun logECenterOne(xVal: BigDecimal): BigDecimal {
+        // Assume that 0 < xVal < 2.
+        var i = 1
+        var altSign = M_ONE
+        var result = M_ZERO
+        val xFrac = xVal - M_ONE
+
+        while ((xFrac.abs().pow(i) / BigDecimal(i)).fracScale() > M_ZERO) {
+            result += altSign * xFrac.pow(i) / BigDecimal(i)
+            altSign = -altSign
+            ++i
+        }
+
+        return result
+    }
+
+    fun logE(xVal: BigDecimal): BigDecimal {
+        // Assume xVal is a positive real number.
+        var tmpVal = xVal
+        var tenPow = 0
+        while (tmpVal > M_ZERO) {
+            tmpVal = tmpVal.divideToIntegralValue(M_TEN)
+            ++tenPow
+        }
+        val powTen = M_TEN.pow(tenPow)
+        val tenPowDec = tenPow.toBigDecimal()
+        return tenPowDec * M_LOG_E_TEN + logECenterOne(M_ONE - (powTen - xVal) / powTen)
+    }
+
+    fun posBasePow(baseVal: BigDecimal, powVal: BigDecimal): BigDecimal {
+        // Assume baseVal is a positive real number.
+        return exp(powVal * logE(baseVal))
     }
 }

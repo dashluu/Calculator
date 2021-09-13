@@ -13,11 +13,11 @@ class Fraction(private var numer: BigInteger, private var denom: BigInteger) {
     }
 
     companion object {
-        fun toFraction(num: BigDecimal, doSimplify: Boolean = true): Fraction {
+        fun toFraction(num: BigDecimal, isSimplified: Boolean = true): Fraction {
             val numerator = num.unscaledValue()
             val denominator = BigInteger.TEN.pow(num.scale())
             val frac = Fraction(numerator, denominator)
-            if (doSimplify) return frac.simplify()
+            if (isSimplified) return frac.simplify()
             return frac
         }
     }
