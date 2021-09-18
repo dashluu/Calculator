@@ -1,6 +1,5 @@
 package com.example.calculator
 
-import java.lang.ArithmeticException
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.text.DecimalFormat
@@ -38,16 +37,16 @@ class CoreMath {
 
     companion object {
         const val MIN_FRAC_DIGITS = 9
-        const val MAX_FRAC_DIGITS = 20
+        const val MAX_FRAC_DIGITS = 15
         val ROUNDING_MODE = RoundingMode.HALF_UP
         const val MAX_TAYLOR_TERMS = 50
-        val M_ZERO: BigDecimal = BigDecimal.ZERO
-        val M_ONE: BigDecimal = BigDecimal.ONE
-        val M_TEN: BigDecimal = BigDecimal.TEN
-        val M_PI = BigDecimal(PI)
-        val M_DEG = BigDecimal(180)
-        val M_E = BigDecimal(E)
-        val M_LOG_E_TEN = BigDecimal(log(10.0, E))
+        val M_ZERO: BigDecimal = BigDecimal.ZERO.fracScale()
+        val M_ONE: BigDecimal = BigDecimal.ONE.fracScale()
+        val M_TEN: BigDecimal = BigDecimal.TEN.fracScale()
+        val M_PI = BigDecimal(PI).fracScale()
+        val M_DEG = BigDecimal(180).fracScale()
+        val M_E = BigDecimal(E).fracScale()
+        val M_LOG_E_TEN = BigDecimal(log(10.0, E)).fracScale()
     }
 
     init {
@@ -91,32 +90,11 @@ class CoreMath {
         return M_ONE
     }
 
-    private fun mAdd(num1: BigDecimal, num2: BigDecimal): BigDecimal {
-        return num1.fracScale() + num2.fracScale()
-    }
-
-    private fun mSub(num1: BigDecimal, num2: BigDecimal): BigDecimal {
-        return num1.fracScale() - num2.fracScale()
-    }
-
-    private fun mMult(num1: BigDecimal, num2: BigDecimal): BigDecimal {
-        return num1.fracScale() * num2.fracScale()
-    }
-
-    private fun mDiv(num1: BigDecimal, num2: BigDecimal): BigDecimal {
-        return num1.fracScale() / num2.fracScale()
-    }
-
-    private fun mPow(baseVal: BigDecimal, powVal: Int): BigDecimal {
-        return baseVal.fracScale().pow(powVal).fracScale()
-    }
-
     private fun testPrecision(
         mVal: BigDecimal, xVal: BigDecimal, aVal: BigDecimal,
         nVal: Int, fact: BigDecimal
     ): Boolean {
-        // (mVal * (xVal - aVal).abs().pow(nVal)) / fact == M_ZERO
-        return mDiv(mMult(mVal, mPow(mSub(xVal, aVal).abs(), nVal)), fact) == M_ZERO.fracScale()
+        return ((mVal * (xVal - aVal).abs().pow(nVal)) / fact).fracScale() == M_ZERO
     }
 
     fun exp(xVal: BigDecimal): BigDecimal {
@@ -124,16 +102,12 @@ class CoreMath {
         var xPow = M_ONE
         var fact = M_ONE
         var result = M_ZERO
-        // upper = M_E.pow(xVal.toInt() + 1)
-        val upper = mPow(M_E, xVal.toInt() + 1)
+        val upper = M_E.pow(xVal.toInt() + 1)
 
-        while (!testPrecision(upper, xVal, M_ZERO, i, fact)) {
-            // result += xPow / fact
-            result = mAdd(result, mDiv(xPow, fact))
-            // xPow *= xVal
-            xPow = mMult(xPow, xVal)
-            // fact *= BigDecimal(i + 1)
-            fact = mMult(fact, BigDecimal(i + 1))
+        while (i < MAX_TAYLOR_TERMS && !testPrecision(upper, xVal, M_ZERO, i, fact)) {
+            result += xPow / fact
+            xPow *= xVal
+            fact *= BigDecimal(i + 1)
             ++i
         }
 
@@ -147,10 +121,8 @@ class CoreMath {
         var result = M_ZERO
         val xFrac = xVal - M_ONE
 
-        // xFrac.abs().pow(i) / BigDecimal(i) > M_ZERO
-        while (mDiv(mPow(xFrac.abs(), i), BigDecimal(i)) > M_ZERO) {
-            // result += altSign * xFrac.pow(i) / BigDecimal(i)
-            result = mAdd(result, mDiv(mMult(altSign, mPow(xFrac, i)), BigDecimal(i)))
+        while (i <= MAX_TAYLOR_TERMS && (xFrac.abs().pow(i) / BigDecimal(i)).fracScale() > M_ZERO) {
+            result += altSign * xFrac.pow(i) / BigDecimal(i)
             altSign = -altSign
             ++i
         }
@@ -166,24 +138,34 @@ class CoreMath {
             tmpVal = tmpVal.divideToIntegralValue(M_TEN)
             ++tenPow
         }
-        // powTen = M_TEN.pow(tenPow)
-        val powTen = mPow(M_TEN, tenPow)
+        val powTen = M_TEN.pow(tenPow)
         val tenPowDec = tenPow.toBigDecimal()
-        // tenPowDec * M_LOG_E_TEN + logECenterOne(M_ONE - (powTen - xVal) / powTen)
-        return mAdd(
-            mMult(tenPowDec, M_LOG_E_TEN),
-            logECenterOne(mSub(M_ONE, mDiv(mSub(powTen, xVal), powTen)))
-        )
+        return tenPowDec * M_LOG_E_TEN + logECenterOne(M_ONE - (powTen - xVal) / powTen)
     }
 
     fun posBasePow(baseVal: BigDecimal, powVal: BigDecimal): BigDecimal {
         // Assume baseVal is a positive real number.
-        // exp(powVal * logE(baseVal))
-        return exp(mMult(powVal, logE(baseVal)))
-    }
-
-    fun sqrt(xVal: BigDecimal): BigDecimal {
-        if (xVal < M_ZERO) throw ArithmeticException()
-        return posBasePow(xVal, BigDecimal("0.5"))
+        return exp(powVal * logE(baseVal))
     }
 }
+
+
+
+
+
+
+
+@Test
+    fun testComplexExpr() {
+        assertEquals(
+            coreMath.formatResult(BigDecimal("2")),
+            coreMath.formatResult(
+                coreMath.posBasePow(
+                    coreMath.posBasePow(
+                        BigDecimal("2"),
+                        BigDecimal("0.5")
+                    ), BigDecimal("2")
+                )
+            )
+        )
+    }

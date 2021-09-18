@@ -63,7 +63,7 @@ class MathEngine {
         for (mathObj in tokenQueue) {
             if (mathObj.isOperator() && !mathObj.isOpenParen()) {
                 /*
-                If the current string is an operator, compare it to the top of the stack.
+                If the current math object is an operator, compare it to the top of the stack.
                 If its precedence is lower or equal to that of stack top, pop the stack
                 until it is empty or an open parenthesis is encountered and then push the
                 operator onto the stack.
@@ -100,7 +100,7 @@ class MathEngine {
             }
         }
 
-        // Enqueue strings that are popped from the stack
+        // Enqueue math objects that are popped from the stack.
         while (operatorStack.isNotEmpty()) {
             top = operatorStack.removeLast()
             postfixQueue.addLast(top)

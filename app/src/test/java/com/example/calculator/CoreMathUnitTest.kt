@@ -14,34 +14,49 @@ class CoreMathUnitTest {
     private val coreMath = CoreMath()
 
     @Test
-    fun exp_isCorrect() {
+    fun testExp() {
         assertEquals(
-            BigDecimal("0.1495686192").fracScale(),
-            coreMath.exp(BigDecimal("-1.9")).fracScale()
+            coreMath.formatResult(BigDecimal("0.1495686192")),
+            coreMath.formatResult(coreMath.exp(BigDecimal("-1.9")))
         )
     }
 
     @Test
-    fun logECenterOne_isCorrect() {
+    fun testLogECenterOne() {
         assertEquals(
-            BigDecimal("-1.203972804").fracScale(),
-            coreMath.logECenterOne(BigDecimal("0.3")).fracScale()
+            coreMath.formatResult(BigDecimal("-1.203972804")),
+            coreMath.formatResult(coreMath.logECenterOne(BigDecimal("0.3")))
         )
     }
 
     @Test
-    fun logE_isCorrect() {
+    fun testLogE() {
         assertEquals(
-            BigDecimal("1.098612289").fracScale(),
-            coreMath.logE(BigDecimal("3")).fracScale()
+            coreMath.formatResult(BigDecimal("1.098612289")),
+            coreMath.formatResult(coreMath.logE(BigDecimal("3")))
         )
     }
 
     @Test
-    fun posBasePow_isCorrect() {
+    fun testPosBasePow() {
         assertEquals(
-            BigDecimal("3").fracScale(),
-            coreMath.posBasePow(BigDecimal("3"), BigDecimal("1")).fracScale()
+            coreMath.formatResult(BigDecimal("36203333.15")),
+            coreMath.formatResult(coreMath.posBasePow(BigDecimal("5.7"), BigDecimal("10")))
+        )
+    }
+
+    @Test
+    fun testComplexExpr() {
+        assertEquals(
+            coreMath.formatResult(BigDecimal("2")),
+            coreMath.formatResult(
+                coreMath.posBasePow(
+                    coreMath.posBasePow(
+                        BigDecimal("2"),
+                        BigDecimal("0.5")
+                    ), BigDecimal("2")
+                )
+            )
         )
     }
 }
